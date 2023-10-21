@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
@@ -8,18 +8,44 @@ import {
   ProfileCard,
   TopBar,
 } from "../components";
-import { posts } from "../assets/data";
+import { deletePost, fetchPosts, getUserInfo } from "../utils";
 
 const Profile = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
-  // const { posts } = useSelector((state) => state.posts);
+  const { posts } = useSelector((state) => state.posts);
   const [userInfo, setUserInfo] = useState(user);
   const [loading, setLoading] = useState(false);
 
-  const handleDelete = () => {};
-  const handleLikePost = () => {};
+  const url = `/get-user-post/${id}`;
+
+  const getUser = async()=>{
+    const res = await getUserInfo({userId:user?.user?._id , id})
+    setUserInfo(res)
+  }
+
+  const getPosts = async()=>{
+    await fetchPosts({userId:user?.user?._id , url , dispatch})
+    setLoading(false)
+    setUserInfo(res)
+  }
+
+  const handleDelete = async(id) => {
+    await deletePost({id,userId:user?.user?._id})
+    await getPosts()
+  };
+  
+  const handleLikePost = (url) => {
+    
+  };
+
+
+  useEffect(()=>{
+    setLoading(true)
+    getUser();
+    getPosts();
+  },[id])
 
   return (
     <>

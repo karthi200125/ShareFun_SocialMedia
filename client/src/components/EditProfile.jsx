@@ -5,7 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import TextInput from "./TextInput";
 import Loading from "./Loading";
 import CustomButton from "./CustomButton";
-import { UpdateProfile } from "../redux/userSlice";
+import { login, updateProfile } from "../redux/userSlice";
+import axios from 'axios';
+import { apiRequest } from "../utils";
 
 const EditProfile = () => {
   const { user } = useSelector((state) => state.user);
@@ -20,14 +22,46 @@ const EditProfile = () => {
     formState: { errors },
   } = useForm({
     mode: "onChange",
-    defaultValues: { ...user },
+    defaultValues: {
+      firstName: user?.user?.firstName || "",
+      lastName: user?.user?.lastName || "",
+      profession: user?.user?.profession || "",
+      location: user?.user?.location || "",
+    },
   });
 
-  const onSubmit = async (data) => {};
-
-  const handleClose = () => {
-    dispatch(UpdateProfile(false));
+  const onSubmit = async (data) => {
+    setIsSubmitting(true);
+    setErrMsg("");
+    try {
+      const res = await apiRequest({
+        url: `/users/updateUser/${user?.user?._id}`,
+        data: { ...data, userId: user?.user?._id },
+        method: "PUT"
+      });
+  
+      if (res?.data === "failed") {
+        setErrMsg(res);
+      } else {
+        setErrMsg("");        
+        dispatch(updateProfile(false))
+        dispatch(login({ ...user, user: { ...user.user, ...data } }));        
+        const updatedUser = { ...user, user: { ...user.user, ...data } };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+  
+      setIsSubmitting(false);
+    } catch (error) {
+      setIsSubmitting(false);
+      setErrMsg(error?.response?.data);
+    }
   };
+  
+  
+  const handleClose = () => {
+    dispatch(updateProfile(false));
+  };
+
   const handleSelect = (e) => {
     setPicture(e.target.files[0]);
   };
@@ -69,8 +103,9 @@ const EditProfile = () => {
                 placeholder='First Name'
                 type='text'
                 styles='w-full'
+                value={user?.user?.firstName}
                 register={register("firstName", {
-                  required: "First Name is required!",
+                  // required: "First Name is required!",
                 })}
                 error={errors.firstName ? errors.firstName?.message : ""}
               />
@@ -80,8 +115,9 @@ const EditProfile = () => {
                 placeholder='Last Name'
                 type='lastName'
                 styles='w-full'
+                value={user?.user?.lastName}
                 register={register("lastName", {
-                  required: "Last Name do no match",
+                  // required: "Last Name do no match",
                 })}
                 error={errors.lastName ? errors.lastName?.message : ""}
               />
@@ -93,7 +129,7 @@ const EditProfile = () => {
                 type='text'
                 styles='w-full'
                 register={register("profession", {
-                  required: "Profession is required!",
+                  // required: "Profession is required!",
                 })}
                 error={errors.profession ? errors.profession?.message : ""}
               />
@@ -104,7 +140,7 @@ const EditProfile = () => {
                 type='text'
                 styles='w-full'
                 register={register("location", {
-                  required: "Location do no match",
+                  // required: "Location do no match",
                 })}
                 error={errors.location ? errors.location?.message : ""}
               />
@@ -122,18 +158,9 @@ const EditProfile = () => {
                 />
               </label>
 
-              {errMsg?.message && (
-                <span
-                  role='alert'
-                  className={`text-sm ${
-                    errMsg?.status === "failed"
-                      ? "text-[#f64949fe]"
-                      : "text-[#2ba150fe]"
-                  } mt-0.5`}
-                >
-                  {errMsg?.message}
-                </span>
-              )}
+              {errMsg &&
+                <span className="text-[#f64949fe]">{errMsg}</span>
+              }
 
               <div className='py-5 sm:flex sm:flex-row-reverse border-t border-[#66666645]'>
                 {isSubmitting ? (

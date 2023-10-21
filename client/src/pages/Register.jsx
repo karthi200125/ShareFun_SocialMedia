@@ -2,20 +2,20 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import { CustomButton, Loading, TextInput } from "../components"; // Make sure to import components correctly
-import { apiRequest } from "../utils/apirequest";
+import { TbSocial } from "react-icons/tb";
 import { BsShare } from "react-icons/bs";
 import { AiOutlineInteraction } from "react-icons/ai";
 import { ImConnection } from "react-icons/im";
-import { TbSocial } from "react-icons/tb";
+import { CustomButton, Loading, TextInput } from "../components";
 import { BgImage } from "../assets";
+import axios from 'axios'
+
 
 const Register = () => {
   const [errMsg, setErrMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
-
-  const naviagte = useNavigate()
+  const navigate = useNavigate()
   const {
     register,
     handleSubmit,
@@ -26,25 +26,21 @@ const Register = () => {
   });
 
   const onSubmit = async (data) => {
-    setIsSubmitting(true);    
+    setIsSubmitting(true);
     try {
-      const res = await apiRequest.post("/auth/register", {firstName:data.firstName , lastName:data.lastName , email:data.email , password:data.password}); 
-      if (res?.data.status === "failed") {
-        setErrMsg(res.data.message); 
+      const res = await axios.post("http://localhost:8800/auth/register", data);
+      setIsSubmitting(false);      
+      if (res.status === 201) {        
+        navigate('/login');
       } else {
         setErrMsg(res.data.message);
-        setTimeout(() => {
-          window.location.replace('/login');
-        }, 5000);
       }
-      setIsSubmitting(false);
-        
     } catch (error) {
-      console.log(error);
-      setErrMsg("Something went wrong. Please try again.");
+      setErrMsg(error?.response?.data.message);
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <div className='bg-bgColor w-full h-[100vh] flex items-center justify-center p-6'>
@@ -139,18 +135,10 @@ const Register = () => {
                 }
               />
             </div>
-
-            {errMsg?.message && (
-              <span
-                className={`text-sm ${
-                  errMsg?.status == "failed"
-                    ? "text-[#f64949fe]"
-                    : "text-[#2ba150fe]"
-                } mt-0.5`}
-              >
-                {errMsg?.message}
-              </span>
-            )}
+            
+            {errMsg &&
+            <span className="text-[#f64949fe]">{errMsg}</span>
+            }
 
             {isSubmitting ? (
               <Loading />

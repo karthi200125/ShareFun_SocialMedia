@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import { NoProfile } from "../assets";
@@ -8,7 +8,16 @@ import { useForm } from "react-hook-form";
 import TextInput from "./TextInput";
 import Loading from "./Loading";
 import CustomButton from "./CustomButton";
-import { postComments } from "../assets/data";
+import axios from "axios";
+
+const getPostComments = async (postId) => {
+  try {
+    const res = await axios.get(`http://localhost:8800/posts/comments/${postId}`);
+    return res?.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const ReplyCard = ({ reply, user, handleLike }) => {
   return (
@@ -41,7 +50,7 @@ const ReplyCard = ({ reply, user, handleLike }) => {
             className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer'
             onClick={handleLike}
           >
-            {reply?.likes?.includes(user?._id) ? (
+            {reply?.likes?.includes(user?.user?._id) ? (
               <BiSolidLike size={20} color='blue' />
             ) : (
               <BiLike size={20} />
@@ -66,7 +75,33 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
     mode: "onChange",
   });
 
-  const onSubmit = async (data) => {};
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setErrMsg("");
+
+    try {
+      const URL = !replyAt
+        ? "http://localhost:8800/posts/comment/" + id
+        : "http://localhost:8800/posts/reply-comment/" + id;
+
+      const newData = { comment: data.comment, from: user?.user?.firstName + " " + user?.user?.lastName, replyAt: replyAt };
+
+      const res = await axios.post(URL, newData);
+
+      if (res.status === 400) {
+        setErrMsg(res.data.message);
+      } else {
+        reset({
+          comment: "",
+        });
+        setErrMsg("");
+        await getComments();
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
 
   return (
     <form
@@ -93,11 +128,10 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
       {errMsg?.message && (
         <span
           role='alert'
-          className={`text-sm ${
-            errMsg?.status === "failed"
-              ? "text-[#f64949fe]"
-              : "text-[#2ba150fe]"
-          } mt-0.5`}
+          className={`text-sm ${errMsg?.status === "failed"
+            ? "text-[#f64949fe]"
+            : "text-[#2ba150fe]"
+            } mt-0.5`}
         >
           {errMsg?.message}
         </span>
@@ -121,38 +155,51 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
 const PostCard = ({ post, user, deletePost, likePost }) => {
   const [showAll, setShowAll] = useState(0);
   const [showReply, setShowReply] = useState(0);
+  const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [replyComments, setReplyComments] = useState(0);
-  const [showComments, setShowComments] = useState(0);
+  const [replyComments, setReplyComments] = useState(null);
 
-  const getComments = async () => {
-    setReplyComments(0);
-
-    setComments(postComments);
+  const getComments = async (id) => {
+    setReplyComments(null);
+    setLoading(true);
+    const result = await getPostComments(id);
+    setComments(result);
     setLoading(false);
   };
-  const handleLike = async () => {};
+
+  const handleLike = async (uri) => {
+    await likePost(uri);
+    await getComments(post?._id);
+  };
+
+  useEffect(() => {
+    if (showComments) {
+      getComments(post?._id);
+    }
+  }, [showComments, post?._id]);
+
+console.log("posts name check" , post?.profession)
 
   return (
     <div className='mb-2 bg-primary p-4 rounded-xl'>
       <div className='flex gap-3 items-center mb-2'>
-        <Link to={"/profile/" + post?.userId?._id}>
+        <Link to={"/profile/" + post?._id}>
           <img
-            src={post?.userId?.profileUrl ?? NoProfile}
-            alt={post?.userId?.firstName}
+            src={post?.profileUrl ? post?.profileUrl : NoProfile}
+            alt={post?.firstName}
             className='w-14 h-14 object-cover rounded-full'
           />
         </Link>
 
         <div className='w-full flex justify-between'>
           <div className=''>
-            <Link to={"/profile/" + post?.userId?._id}>
+            <Link to={"/profile/" + post._id}>
               <p className='font-medium text-lg text-ascent-1'>
-                {post?.userId?.firstName} {post?.userId?.lastName}
+                {post?.firstName} {post?.lastName}
               </p>
             </Link>
-            <span className='text-ascent-2'>{post?.userId?.location}</span>
+            <span className='text-ascent-2'>{post?.profession}</span>
           </div>
 
           <span className='text-ascent-2'>
@@ -198,8 +245,10 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
         className='mt-4 flex justify-between items-center px-3 py-2 text-ascent-2
       text-base border-t border-[#66666645]'
       >
-        <p className='flex gap-2 items-center text-base cursor-pointer'>
-          {post?.likes?.includes(user?._id) ? (
+        <p className='flex gap-2 items-center text-base cursor-pointer'
+          onClick={() => handleLike("/posts/like/" + post._id)}
+        >
+          {post?.likes?.includes(user?.user?._id) ? (
             <BiSolidLike size={20} color='blue' />
           ) : (
             <BiLike size={20} />
@@ -218,7 +267,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
           {post?.comments?.length} Comments
         </p>
 
-        {user?._id === post?.userId?._id && (
+        {user?.user?._id === post?.userId?._id && (
           <div
             className='flex gap-1 items-center text-base text-ascent-1 cursor-pointer'
             onClick={() => deletePost(post?._id)}
@@ -240,8 +289,8 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
 
           {loading ? (
             <Loading />
-          ) : comments?.length > 0 ? (
-            comments?.map((comment) => (
+          ) : comments?.data?.length > 0 ? (
+            comments?.data?.map((comment) => (
               <div className='w-full py-2' key={comment?._id}>
                 <div className='flex gap-3 items-center mb-1'>
                   <Link to={"/profile/" + comment?.userId?._id}>
@@ -268,7 +317,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
 
                   <div className='mt-2 flex gap-6'>
                     <p className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer'>
-                      {comment?.likes?.includes(user?._id) ? (
+                      {comment?.likes?.includes(user?.user?._id) ? (
                         <BiSolidLike size={20} color='blue' />
                       ) : (
                         <BiLike size={20} />
@@ -317,14 +366,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
                         reply={reply}
                         user={user}
                         key={reply?._id}
-                        handleLike={() =>
-                          handleLike(
-                            "/posts/like-comment/" +
-                              comment?._id +
-                              "/" +
-                              reply?._id
-                          )
-                        }
+                        handleLike={() => handleLike("/posts/like-comment/" + comment?._id + "/" + reply?._id)}
                       />
                     ))}
                 </div>
