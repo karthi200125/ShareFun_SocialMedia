@@ -1,44 +1,28 @@
-import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import morgan from "morgan";
-import bodyParser from "body-parser";
-import path from "path";
-//securty packges
-import helmet from "helmet";
-import mongoose from "mongoose";
-import errorMiddleware from "./middleware/errorMiddleware.js";
-import router from "./routes/index.js";
-
-const __dirname = path.resolve(path.dirname(""));
-
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import AUthRoute from './routes/Auth.js';
+import UserRoute from './routes/User.js';
+import PostRoute from './routes/Post.js';
+import errorMiddleware from './Middlewares/ErrorMiddleware.js';
 dotenv.config();
 
 const app = express();
-
-app.use(express.static(path.join(__dirname, "views/build")));
-
-const PORT = process.env.PORT || 8800;
-
-mongoose.connect(process.env.MONGODB_URL)
-.then(()=>console.log("Mongo Db Connected"))
-.catch((err)=>console.log("Mongo db connection failed"))
-
-
-app.use(helmet());
+app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-app.use(morgan("dev"));
-app.use(router);
-
-// error middleware
 app.use(errorMiddleware);
+app.use("/auth", AUthRoute);
+app.use("/users", UserRoute);
+app.use("/posts", PostRoute);
+
+mongoose.connect("mongodb+srv://socialmedia:socialmedia123@cluster0.odsvacz.mongodb.net/?retryWrites=true&w=majority")
+    .then(() => console.log("MONGO DB is connected"))
+    .catch((err) => console.log("MONGO DB connection failed", err));
 
 app.listen(8800, () => {
-  console.log("Server running on port: 8800");
+    console.log("API IS WORKING");
 });
-

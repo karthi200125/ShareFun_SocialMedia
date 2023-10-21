@@ -1,55 +1,41 @@
 import Comments from "../models/commentModel.js";
 import Posts from "../models/postModel.js";
-import Users from "../models/User.js";
+import Users from "../models/userModel.js";
 
 export const createPost = async (req, res, next) => {
   try {
-    const { userId, description, image } = req.body;
+    const { userId } = req.body.user;
+    const { description, image } = req.body;
 
     if (!description) {
-      return res.status(400).json({
-        success: false,
-        message: "You must provide a description",
-      });
+      next("You must provide a description");
+      return;
     }
 
-    // Find the user associated with the post
-    const user = await Users.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-    
     const post = await Posts.create({
-      userId: user._id,
-      firstName: user.firstName,
-      profession: user.profession, 
-      profileUrl: user.profileUrl,
+      userId,
       description,
       image,
     });
 
     res.status(200).json({
-      success: true,
+      sucess: true,
       message: "Post created successfully",
       data: post,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(404).json({ message: error.message });
   }
 };
 
-export const getPosts = async (req, res, next) => {
+export const getPosts = async (req, res, next) => {  
   try {
-    const { userId } = req.body;
+    const { userId } = req.body.user;
     const { search } = req.body;
 
     const user = await Users.findById(userId);
-    const friends = user?.friends?.toString().split(",") || [];
+    const friends = user?.friends?.toString().split(",") ?? [];
     friends.push(userId);
 
     const searchPostQuery = {
@@ -60,7 +46,12 @@ export const getPosts = async (req, res, next) => {
       ],
     };
 
-    const posts = await Posts.find(search ? searchPostQuery : {}).sort({ _id: -1 });
+    const posts = await Posts.find(search ? searchPostQuery : {})
+      .populate({
+        path: "userId",
+        select: "firstName lastName location profileUrl -password",
+      })
+      .sort({ _id: -1 });
 
     const friendsPosts = posts?.filter((post) => {
       return friends.includes(post?.userId?._id.toString());
@@ -79,8 +70,8 @@ export const getPosts = async (req, res, next) => {
     }
 
     res.status(200).json({
-      success: true, // Corrected "sucess" to "success"
-      message: "successfully", // You can provide a meaningful message here
+      sucess: true,
+      message: "successfully",
       data: postsRes,
     });
   } catch (error) {
@@ -88,7 +79,6 @@ export const getPosts = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
-
 
 export const getPost = async (req, res, next) => {
   try {
@@ -154,14 +144,14 @@ export const getComments = async (req, res, next) => {
     const { postId } = req.params;
 
     const postComments = await Comments.find({ postId })
-      // .populate({
-      //   path: "userId",
-      //   select: "firstName lastName location profileUrl -password",
-      // })
-      // .populate({
-      //   path: "replies.userId",
-      //   select: "firstName lastName location profileUrl -password",
-      // })
+      .populate({
+        path: "userId",
+        select: "firstName lastName location profileUrl -password",
+      })
+      .populate({
+        path: "replies.userId",
+        select: "firstName lastName location profileUrl -password",
+      })
       .sort({ _id: -1 });
 
     res.status(200).json({
@@ -175,9 +165,9 @@ export const getComments = async (req, res, next) => {
   }
 };
 
-export const likePost = async (req, res, next) => {      
+export const likePost = async (req, res, next) => {
   try {
-    const { userId } = req.body;    
+    const { userId } = req.body.user;
     const { id } = req.params;
 
     const post = await Posts.findById(id);
@@ -205,8 +195,8 @@ export const likePost = async (req, res, next) => {
   }
 };
 
-export const likePostComment = async (req, res, next) => {  
-  const { userId } = req.body;
+export const likePostComment = async (req, res, next) => {
+  const { userId } = req.body.user;
   const { id, rid } = req.params;
 
   try {
@@ -268,20 +258,21 @@ export const likePostComment = async (req, res, next) => {
   }
 };
 
-export const commentPost = async (req, res, next) => {  
+export const commentPost = async (req, res, next) => {
   try {
-    const { comment, from, userId } = req.body;
-
-    if (!comment || !from) {
-      return res.status(400).json({ message: "Comment and from are required fields." });
-    }
-
+    const { comment, from } = req.body;
+    const { userId } = req.body.user;
     const { id } = req.params;
+
+    if (comment === null) {
+      return res.status(404).json({ message: "Comment is required." });
+    }
 
     const newComment = new Comments({ comment, from, userId, postId: id });
 
     await newComment.save();
-    
+
+    //updating the post with the comments id
     const post = await Posts.findById(id);
 
     post.comments.push(newComment._id);
@@ -293,16 +284,17 @@ export const commentPost = async (req, res, next) => {
     res.status(201).json(newComment);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(404).json({ message: error.message });
   }
 };
 
 export const replyPostComment = async (req, res, next) => {
-  const { comment, replyAt, from, userId } = req.body;
+  const { userId } = req.body.user;
+  const { comment, replyAt, from } = req.body;
   const { id } = req.params;
 
-  if (!comment || !from) {
-    return res.status(400).json({ message: "Comment and from are required fields." });
+  if (comment === null) {
+    return res.status(404).json({ message: "Comment is required." });
   }
 
   try {
@@ -321,10 +313,9 @@ export const replyPostComment = async (req, res, next) => {
     res.status(200).json(commentInfo);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(404).json({ message: error.message });
   }
 };
-
 
 export const deletePost = async (req, res, next) => {
   try {
@@ -341,4 +332,3 @@ export const deletePost = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
-
