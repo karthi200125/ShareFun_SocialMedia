@@ -4,15 +4,9 @@ import jwt from 'jsonwebtoken'
 
 // GET USER
 export const getUser = async (req, res, next) => {
-    const id = req.params.id;
-    console.log(id)
+    const { id } = req.params;    
     try {
         const user = await User.findById(id)
-        // .populate({
-        //     path: "friends",
-        //     select: "-password",
-        // });
-
         if (!user) {
             return res.status(200).send({
                 message: "User Not Found",
@@ -38,12 +32,9 @@ export const getUser = async (req, res, next) => {
 
 // UPDATE USER
 export const updateUser = async (req, res, next) => {
+    const { userId } = req.body    
     try {
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
+        const updatedUser = await User.findByIdAndUpdate(userId, req.body.newdata, { new: true });
         res.status(200).json(updatedUser);
     } catch (error) {
         next(error);
@@ -128,9 +119,9 @@ export const getFriendRequest = async (req, res) => {
     }
 };
 // ACCEPT REQUEST
-export const acceptRequest = async (req, res, next) => {    
-    try {        
-        const { rid, status , userId } = req.body;
+export const acceptRequest = async (req, res, next) => {
+    try {
+        const { rid, status, userId } = req.body;
 
         const requestExist = await FriendRequest.findById(rid);
 
@@ -220,6 +211,28 @@ export const suggestedFriends = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(404).json({ message: error.message });
+    }
+};
+
+// GET FRIENDS
+export const GetUserFriends = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        const userFriendsIds = user.friends;
+        const userFriends = await User.find({ _id: { $in: userFriendsIds } });
+
+        res.status(200).json(userFriends);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Error retrieving user's friends" });
     }
 };
 
