@@ -1,27 +1,28 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { CustomButton, EditProfile, FriendsCard, Loading, PostCard, ProfileCard, TextInput, TopBar } from "../components";
-import { Link } from "react-router-dom";
-import { NoProfile } from "../assets";
-import { BsFiletypeGif, BsPersonFillAdd } from "react-icons/bs";
-import { BiImages, BiSolidVideo } from "react-icons/bi";
 import { useForm } from "react-hook-form";
-import { apiRequest, deletePost, fetchPosts,getUserInfo,sendFriendRequest } from '../utils/index'
+import { BiImages, BiSolidVideo } from "react-icons/bi";
+import { BsFiletypeGif, BsPersonFillAdd } from "react-icons/bs";
 import axios from "axios";
-import { login } from "../redux/userSlice";
-
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { CustomButton, EditProfile, FriendsCard, Loading, PostCard, ProfileCard, TextInput, TopBar } from "../components";
+import { apiRequest, deletePost, fetchPosts, getUserInfo, sendFriendRequest } from '../utils/index';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import app from "../firebase";
+import { NoProfile } from "../assets";
 
 const Home = () => {
   const { user, edit } = useSelector((state) => state.user);
-  const { posts } = useSelector(state => state.posts)
+  const { posts } = useSelector(state => state.posts);
   const [friendRequest, setFriendRequest] = useState([]);
   const [suggestedFriends, setSuggestedFriends] = useState([]);
   const [errMsg, setErrMsg] = useState("");
   const [file, setFile] = useState(null);
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [imageURL, setImageURL] = useState(""); // Store the URL of the uploaded image
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   const {
     register,
@@ -32,10 +33,50 @@ const Home = () => {
   const handlePostSubmit = async (data) => {
     setPosting(true);
     setErrMsg("");
+
+    // Check if a file is selected
+    if (file) {
+      try {
+        // Upload the image to Firebase Storage
+        const storage = getStorage(app);
+        const storageRef = ref(storage, `images/${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            // You can update a progress bar here if needed
+          },
+          (error) => {
+            setErrMsg("Image upload failed");
+            setPosting(false);
+          },
+          () => {            
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then((downloadURL) => {                
+                setImageURL(downloadURL);                
+                createPostWithImage(data, downloadURL);
+              })
+              .catch((error) => {
+                setErrMsg("Failed to get image URL");
+                setPosting(false);
+              });
+          }
+        );
+      } catch (error) {
+        setErrMsg("Image upload failed");
+        setPosting(false);
+      }
+    } else {      
+      createPostWithImage(data, "");
+    }
+  };
+
+  const createPostWithImage = async (data, imageUrl) => {
     try {
       const res = await apiRequest({
         url: "posts/create-post",
-        data: { ...data, userId: user?.user?._id , },
+        data: { ...data, userId: user?.user?._id, image:imageUrl },
         method: "POST",
       });
 
@@ -44,6 +85,7 @@ const Home = () => {
       } else {
         setFile(null);
         setErrMsg("");
+        setImageURL(""); 
         await fetchPost();
       }
       setPosting(false);
@@ -77,8 +119,8 @@ const Home = () => {
 
   const fetchFriendRequests = async () => {
     try {
-      const res = await axios.post("http://localhost:8800/users/getfriendrequest",{userId:user?.user?._id})
-      setFriendRequest(res?.data)            
+      const res = await axios.post("http://localhost:8800/users/getfriendrequest", { userId: user?.user?._id })
+      setFriendRequest(res?.data)
     } catch (error) {
       console.log(error)
     }
@@ -98,16 +140,16 @@ const Home = () => {
 
   const handleFriendRequest = async (id) => {
     try {
-      const res = await sendFriendRequest(user , id)
+      const res = await sendFriendRequest(user, id)
       await fetchSuggestedFriends();
     } catch (error) {
       console.log(error)
     }
   };
 
-  const acceptFriendRequest = async (id , status) => { 
+  const acceptFriendRequest = async (id, status) => {
     try {
-      const res = await axios.post("http://localhost:8800/users/acceptrequest",{ userId: user?.user?._id , rid:id , status});      
+      const res = await axios.post("http://localhost:8800/users/acceptrequest", { userId: user?.user?._id, rid: id, status });
       setFriendRequest(res?.data)
     } catch (error) {
       console.log(error)
@@ -115,17 +157,19 @@ const Home = () => {
   };
 
   const getUser = async () => {
-    const res = await getUserInfo(user)    
+    const res = await getUserInfo(user)
     // dispatch(login(res?.data))
-   };
+  };
+
 
   useEffect(() => {
     setLoading(true);
     getUser();
-    fetchPost();
+    fetchPost();    
     fetchFriendRequests();
     fetchSuggestedFriends();
   }, []);
+
 
 
   return (
@@ -148,7 +192,7 @@ const Home = () => {
             >
               <div className='w-full flex items-center gap-2 py-4 border-b border-[#66666645]'>
                 <img
-                  src={user?.profileUrl ?? NoProfile}
+                  src={user?.user?.profileUrl ?? NoProfile}
                   alt='User Image'
                   className='w-14 h-14 rounded-full object-cover'
                 />
@@ -247,7 +291,7 @@ const Home = () => {
                   user={user}
                   deletePost={handleDeletePost}
                   likePost={handlePostLike}
-                />                
+                />
               ))
             ) : (
               <div className='flex w-full h-full items-center justify-center'>
@@ -290,12 +334,12 @@ const Home = () => {
                     <div className='flex gap-1'>
                       <CustomButton
                         title='Accept'
-                        onClick={()=>acceptFriendRequest(_id,"Accepted")}
+                        onClick={() => acceptFriendRequest(_id, "Accepted")}
                         containerStyles='bg-[#0444a4] text-xs text-white px-1.5 py-1 rounded-full'
                       />
                       <CustomButton
                         title='Deny'
-                        onClick={()=>acceptFriendRequest(_id,"Denied")}
+                        onClick={() => acceptFriendRequest(_id, "Denied")}
                         containerStyles='border border-[#666] text-xs text-ascent-1 px-1.5 py-1 rounded-full'
                       />
                     </div>

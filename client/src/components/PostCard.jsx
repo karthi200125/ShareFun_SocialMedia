@@ -10,14 +10,17 @@ import Loading from "./Loading";
 import CustomButton from "./CustomButton";
 import axios from "axios";
 
-const getPostComments = async (postId) => {
+const getPostComments = async (postId, userId) => {
   try {
-    const res = await axios.get(`http://localhost:8800/posts/comments/${postId}`);
+    const res = await axios.get(`http://localhost:8800/posts/comments/${postId}`, {
+      params: { userId },
+    });
     return res?.data;
   } catch (error) {
     console.log(error);
   }
 };
+
 
 const ReplyCard = ({ reply, user, handleLike }) => {
   return (
@@ -103,6 +106,7 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
     }
   };
 
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -110,7 +114,7 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
     >
       <div className='w-full flex items-center gap-2 py-4'>
         <img
-          src={user?.profileUrl ?? NoProfile}
+          src={user?.user?.profileUrl ?? NoProfile}
           alt='User Image'
           className='w-10 h-10 rounded-full object-cover'
         />
@@ -163,7 +167,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
   const getComments = async (id) => {
     setReplyComments(null);
     setLoading(true);
-    const result = await getPostComments(id);
+    const result = await getPostComments(id, post?.userId?._id);
     setComments(result);
     setLoading(false);
   };
@@ -179,27 +183,27 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
     }
   }, [showComments, post?._id]);
 
-console.log("posts name check" , post?.profession)
+  console.log("posts", post)
 
   return (
     <div className='mb-2 bg-primary p-4 rounded-xl'>
       <div className='flex gap-3 items-center mb-2'>
-        <Link to={"/profile/" + post?._id}>
+        <Link to={"/profile/" + post?.userId?._id}>
           <img
-            src={post?.profileUrl ? post?.profileUrl : NoProfile}
-            alt={post?.firstName}
+            src={post?.userId?.profileUrl ? post?.userId?.profileUrl : NoProfile}
+            alt={post?.userId?.firstName}
             className='w-14 h-14 object-cover rounded-full'
           />
         </Link>
 
         <div className='w-full flex justify-between'>
           <div className=''>
-            <Link to={"/profile/" + post._id}>
+            <Link to={"/profile/" + post?.userId?._id}>
               <p className='font-medium text-lg text-ascent-1'>
-                {post?.firstName} {post?.lastName}
+                {post?.userId?.firstName} {post?.lastName}
               </p>
             </Link>
-            <span className='text-ascent-2'>{post?.profession}</span>
+            <span className='text-ascent-2'>{post?.userId?.profession}</span>
           </div>
 
           <span className='text-ascent-2'>
