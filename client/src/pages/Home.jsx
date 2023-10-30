@@ -1,15 +1,14 @@
+import { getDownloadURL, getStorage, ref, uploadBytesResumable } from "firebase/storage";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { BiImages, BiSolidVideo } from "react-icons/bi";
 import { BsFiletypeGif, BsPersonFillAdd } from "react-icons/bs";
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { CustomButton, EditProfile, FriendsCard, Loading, PostCard, ProfileCard, TextInput, TopBar } from "../components";
-import { apiRequest, deletePost, fetchPosts, getUserInfo, sendFriendRequest } from '../utils/index';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import app from "../firebase";
 import { NoProfile } from "../assets";
+import { CustomButton, EditProfile, FriendsCard, Loading, PostCard, ProfileCard, TextInput, TopBar } from "../components";
+import app from "../firebase";
+import { API, apiRequest, deletePost, fetchPosts, getUserInfo, sendFriendRequest } from '../utils/index';
 
 const Home = () => {
   const { user, edit } = useSelector((state) => state.user);
@@ -20,7 +19,7 @@ const Home = () => {
   const [file, setFile] = useState(null);
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [imageURL, setImageURL] = useState(""); // Store the URL of the uploaded image
+  const [imageURL, setImageURL] = useState("");
 
   const dispatch = useDispatch();
 
@@ -34,10 +33,8 @@ const Home = () => {
     setPosting(true);
     setErrMsg("");
 
-    // Check if a file is selected
     if (file) {
       try {
-        // Upload the image to Firebase Storage
         const storage = getStorage(app);
         const storageRef = ref(storage, `images/${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
@@ -45,16 +42,15 @@ const Home = () => {
         uploadTask.on(
           "state_changed",
           (snapshot) => {
-            // You can update a progress bar here if needed
           },
           (error) => {
             setErrMsg("Image upload failed");
             setPosting(false);
           },
-          () => {            
+          () => {
             getDownloadURL(uploadTask.snapshot.ref)
-              .then((downloadURL) => {                
-                setImageURL(downloadURL);                
+              .then((downloadURL) => {
+                setImageURL(downloadURL);
                 createPostWithImage(data, downloadURL);
               })
               .catch((error) => {
@@ -67,7 +63,7 @@ const Home = () => {
         setErrMsg("Image upload failed");
         setPosting(false);
       }
-    } else {      
+    } else {
       createPostWithImage(data, "");
     }
   };
@@ -76,7 +72,7 @@ const Home = () => {
     try {
       const res = await apiRequest({
         url: "posts/create-post",
-        data: { ...data, userId: user?.user?._id, image:imageUrl },
+        data: { ...data, userId: user?.user?._id, image: imageUrl },
         method: "POST",
       });
 
@@ -85,7 +81,7 @@ const Home = () => {
       } else {
         setFile(null);
         setErrMsg("");
-        setImageURL(""); 
+        setImageURL("");
         await fetchPost();
       }
       setPosting(false);
@@ -101,8 +97,8 @@ const Home = () => {
 
   const handlePostLike = async (uri) => {
     try {
-      const res = await axios.post(
-        `http://localhost:8800${uri}`,
+      const res = await API.post(
+        `${uri}`,
         { userId: user?.user?._id }
       );
       console.log(res.data);
@@ -119,17 +115,19 @@ const Home = () => {
 
   const fetchFriendRequests = async () => {
     try {
-      const res = await axios.post("http://localhost:8800/users/getfriendrequest", { userId: user?.user?._id })
+      const res = await API.post("/users/getfriendrequest", { userId: user?.user?._id })
       setFriendRequest(res?.data)
     } catch (error) {
       console.log(error)
     }
   };
 
+
+
   const fetchSuggestedFriends = async () => {
     try {
-      const res = await axios.post(
-        "http://localhost:8800/users/sugestedfriends",
+      const res = await API.post(
+        "/users/sugestedfriends",
         { userId: user?.user?._id }
       );
       setSuggestedFriends(res?.data)
@@ -149,7 +147,7 @@ const Home = () => {
 
   const acceptFriendRequest = async (id, status) => {
     try {
-      const res = await axios.post("http://localhost:8800/users/acceptrequest", { userId: user?.user?._id, rid: id, status });
+      const res = await API.post("/users/acceptrequest", { userId: user?.user?._id, rid: id, status });
       setFriendRequest(res?.data)
     } catch (error) {
       console.log(error)
@@ -165,17 +163,19 @@ const Home = () => {
   useEffect(() => {
     setLoading(true);
     getUser();
-    fetchPost();    
+    fetchPost();
     fetchFriendRequests();
     fetchSuggestedFriends();
   }, []);
 
-
+  const [search, setSearch] = useState("");
+  const searchPosts = posts?.data?.filter((item) => item?.description?.toLowerCase().includes(search?.search))
+  console.log("friend request", friendRequest?.data)
 
   return (
     <>
       <div className='w-full px-0 lg:px-10 pb-20 2xl:px-40 bg-bgColor lg:rounded-lg h-screen overflow-hidden'>
-        <TopBar />
+        <TopBar onSerach={setSearch} />
 
         <div className='w-full flex gap-2 lg:gap-4 pt-5 pb-10 h-full'>
           {/* LEFT */}
@@ -192,7 +192,7 @@ const Home = () => {
             >
               <div className='w-full flex items-center gap-2 py-4 border-b border-[#66666645]'>
                 <img
-                  src={user?.user?.profileUrl ?? NoProfile}
+                  src={user?.profileUrl ?? NoProfile}
                   alt='User Image'
                   className='w-14 h-14 rounded-full object-cover'
                 />
@@ -283,21 +283,36 @@ const Home = () => {
 
             {loading ? (
               <Loading />
-            ) : posts?.data?.length > 0 ? (
-              posts?.data?.map((post) => (
-                <PostCard
-                  key={post?._id}
-                  post={post}
-                  user={user}
-                  deletePost={handleDeletePost}
-                  likePost={handlePostLike}
-                />
-              ))
             ) : (
-              <div className='flex w-full h-full items-center justify-center'>
-                <p className='text-lg text-ascent-2'>No Post Available</p>
-              </div>
+              (posts?.data?.length > 0) ? (
+                searchPosts?.length > 0 ? (
+                  searchPosts.map((post) => (
+                    <PostCard
+                      key={post?._id}
+                      post={post}
+                      user={user}
+                      deletePost={handleDeletePost}
+                      likePost={handlePostLike}
+                    />
+                  ))
+                ) : (
+                  posts.data.map((post) => (
+                    <PostCard
+                      key={post?._id}
+                      post={post}
+                      user={user}
+                      deletePost={handleDeletePost}
+                      likePost={handlePostLike}
+                    />
+                  ))
+                )
+              ) : (
+                <div className='flex w-full h-full items-center justify-center'>
+                  <p className='text-lg text-ascent-2'>No Post Available</p>
+                </div>
+              )
             )}
+
           </div>
 
           {/* RIGJT */}

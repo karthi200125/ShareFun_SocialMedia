@@ -15,6 +15,7 @@ import {
 } from "firebase/storage";
 import app from "../firebase";
 
+
 const EditProfile = () => {
   const { user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -65,7 +66,7 @@ const EditProfile = () => {
           }
         );
       } else {
-        resolve(""); // Resolve with an empty URL if no file is selected
+        resolve("");
       }
     });
   };
@@ -74,13 +75,13 @@ const EditProfile = () => {
     setIsSubmitting(true);
     setErrMsg("");
     try {
-      const uploadedImageUrl = await handleUpload(); // Get the URL after upload
+      const uploadedImageUrl = await handleUpload();
       const newdata = {
         firstName: data.firstName,
         lastName: data.lastName,
         profession: data.profession,
         location: data.location,
-        profileUrl: uploadedImageUrl || data.profileUrl, // Use uploaded URL or existing one
+        profileUrl: uploadedImageUrl || data.profileUrl,
       };
 
       // Update user data
@@ -95,11 +96,7 @@ const EditProfile = () => {
       } else {
         setErrMsg("");
         dispatch(updateProfile(false));
-
-        // Update user data in the Redux store
         dispatch(login({ ...user, user: { ...user.user, ...newdata } }));
-
-        // Update user data in local storage
         const updatedUser = { ...user, user: { ...user.user, ...newdata } };
         localStorage.setItem("user", JSON.stringify(updatedUser));
       }
@@ -116,7 +113,7 @@ const EditProfile = () => {
   };
 
   const handleSelect = (e) => {
-    setFile(e.target.files[0]); 
+    setFile(e.target.files[0]);
   };
 
   return (

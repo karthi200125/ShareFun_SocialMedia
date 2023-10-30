@@ -1,16 +1,16 @@
 import React from "react";
-import { TbSocial } from "react-icons/tb";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import TextInput from "./TextInput";
-import CustomButton from "./CustomButton";
 import { useForm } from "react-hook-form";
 import { BsMoon, BsSunFill } from "react-icons/bs";
 import { IoMdNotificationsOutline } from "react-icons/io";
+import { TbSocial } from "react-icons/tb";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { SetTheme } from "../redux/theme";
 import { logout } from "../redux/userSlice";
+import CustomButton from "./CustomButton";
+import TextInput from "./TextInput";
 
-const TopBar = () => {
+const TopBar = ({onSerach}) => {
   const { theme } = useSelector((state) => state.theme);
   const { user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -26,7 +26,9 @@ const TopBar = () => {
     dispatch(SetTheme(themeValue));
   };
 
-  const handleSearch = async (data) => {};
+  const handleSearch = async (data) => {
+    onSerach(data)
+  };
 
   return (
     <div className='topbar w-full flex items-center justify-between py-3 md:py-6 px-4 bg-primary'>

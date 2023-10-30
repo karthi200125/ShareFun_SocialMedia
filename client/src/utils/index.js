@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SetPosts } from '../redux/postSlice';
 
-const API_URL = "http://localhost:8800";
+const API_URL = "http://localhost:8800/";
 
 export const API = axios.create({
   baseURL: API_URL,
@@ -27,7 +27,7 @@ export const apiRequest = async ({ url, token, data, method, userId }) => {
 
 export const fetchPosts = async (user, dispatch) => {  
   try {
-    const res = await axios.post("http://localhost:8800/posts", { userId: user?.user?._id });
+    const res = await API.post("/posts", { userId: user?.user?._id });
     console.log(res.data);
     dispatch(SetPosts(res?.data));
   } catch (err) {

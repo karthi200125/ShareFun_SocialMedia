@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import { TbSocial } from "react-icons/tb";
-import { BsShare } from "react-icons/bs";
 import { AiOutlineInteraction } from "react-icons/ai";
+import { BsShare } from "react-icons/bs";
 import { ImConnection } from "react-icons/im";
-import { CustomButton, Loading, TextInput } from "../components";
+import { TbSocial } from "react-icons/tb";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 import { BgImage } from "../assets";
-import axios from 'axios'
+import { CustomButton, Loading, TextInput } from "../components";
+import { API } from "../utils";
 
 
 const Register = () => {
@@ -28,7 +28,7 @@ const Register = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post("http://localhost:8800/auth/register", data);
+      const res = await API.post("/auth/register", data);
       setIsSubmitting(false);      
       if (res.status === 201) {        
         navigate('/login');

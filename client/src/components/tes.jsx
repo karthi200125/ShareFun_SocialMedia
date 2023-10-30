@@ -3,7 +3,7 @@ import React, { useContext, useState } from 'react';
 import { BiSolidRightArrowAlt } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../Context/Authcontext';
-import { makeRequest } from '../../axios';
+import { API } from '../utils/index';
 import Navbar from '../../components/Navbar/Navbar';
 import { errorToast, successToast } from '../../toasts';
 import './EditProfile.css';
@@ -21,7 +21,7 @@ const EditProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const mutation = useMutation((newpost) => {
-    return makeRequest.put(`/users/${user._id}`, newpost);
+    return API.put(`/users/${user._id}`, newpost);
   }, {
     onSuccess: () => {
       queryClient.invalidateQueries(['profile']);

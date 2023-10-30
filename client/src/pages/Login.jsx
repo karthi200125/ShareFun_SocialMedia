@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import { TbSocial } from "react-icons/tb";
-import { BsShare } from "react-icons/bs";
 import { AiOutlineInteraction } from "react-icons/ai";
+import { BsShare } from "react-icons/bs";
 import { ImConnection } from "react-icons/im";
-import { CustomButton, Loading, TextInput } from "../components";
+import { TbSocial } from "react-icons/tb";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 import { BgImage } from "../assets";
-import axios from 'axios'
+import { CustomButton, Loading, TextInput } from "../components";
 import { login } from "../redux/userSlice";
+import { API } from "../utils";
 
 
 const Login = () => {
@@ -28,7 +28,7 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post("http://localhost:8800/auth/login", data);
+      const res = await API.post("/auth/login", data);
       setIsSubmitting(false);
       dispatch(login(res.data));
       navigate("/");

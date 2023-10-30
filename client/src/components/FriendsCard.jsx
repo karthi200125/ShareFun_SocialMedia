@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import { NoProfile } from "../assets";
-import { useSelector } from "react-redux";
-import axios from "axios";
+import { API } from "../utils/index";
 
 const FriendsCard = () => {
   const { user } = useSelector((state) => state.user);
@@ -16,8 +16,8 @@ const FriendsCard = () => {
     const GetFriends = async () => {
       try {
         if (user?.user?._id) {
-          const res = await axios.get(
-            `http://localhost:8800/users/GetUserFriends/${pathid || user?.user?._id}`
+          const res = await API.get(
+            `/users/GetUserFriends/${pathid || user?.user?._id}`
           );
           setUserFriends(res.data);
         }
@@ -28,6 +28,7 @@ const FriendsCard = () => {
     GetFriends();
   }, [user, pathid]);
   
+
   return (
     <div>
       <div className="w-full bg-primary shadow-sm rounded-lg px-6 py-5">

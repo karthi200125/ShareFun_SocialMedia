@@ -23,6 +23,7 @@ const getPostComments = async (postId, userId) => {
 
 
 const ReplyCard = ({ reply, user, handleLike }) => {
+  console.log("reply comments",reply)
   return (
     <div className='w-full py-3'>
       <div className='flex gap-3 items-center mb-1'>
@@ -87,7 +88,7 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
         ? "http://localhost:8800/posts/comment/" + id
         : "http://localhost:8800/posts/reply-comment/" + id;
 
-      const newData = { comment: data.comment, from: user?.user?.firstName + " " + user?.user?.lastName, replyAt: replyAt };
+      const newData = { comment: data.comment, from: user?.user?.firstName + " " + user?.user?.lastName, replyAt: replyAt , userId:user?.user?._id };
 
       const res = await axios.post(URL, newData);
 
@@ -106,6 +107,7 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
     }
   };
 
+  
 
   return (
     <form
@@ -183,7 +185,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
     }
   }, [showComments, post?._id]);
 
-  console.log("posts", post)
+  
 
   return (
     <div className='mb-2 bg-primary p-4 rounded-xl'>

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import { FriendsCard, Loading, PostCard, ProfileCard, TopBar } from "../components";
-import { deletePost, fetchPosts, getUserInfo } from "../utils";
-import axios from "axios";
+import { API, deletePost } from "../utils";
 
 const Profile = () => {
   const { id } = useParams();  
@@ -13,12 +12,12 @@ const Profile = () => {
   const [posts, setposts] = useState([]);
 
   const getUser = async () => {
-    const res = await axios.get(`http://localhost:8800/users/getuser/${id}`)
+    const res = await API.get(`/users/getuser/${id}`)
     setUserInfo(res)
   }
 
   const getPosts = async () => {
-    const res =await axios.post("http://localhost:8800/posts" ,{profileId:id})
+    const res =await API.post("/posts" ,{profileId:id})
     setLoading(false)
     setposts(res.data)
   }
