@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 
 // GET USER
 export const getUser = async (req, res, next) => {
-    const { id } = req.params;    
+    const { id } = req.params;
     try {
         const user = await User.findById(id)
         if (!user) {
@@ -32,7 +32,7 @@ export const getUser = async (req, res, next) => {
 
 // UPDATE USER
 export const updateUser = async (req, res, next) => {
-    const { userId } = req.body    
+    const { userId } = req.body
     try {
         const updatedUser = await User.findByIdAndUpdate(userId, req.body.newdata, { new: true });
         res.status(200).json(updatedUser);
@@ -92,23 +92,14 @@ export const getFriendRequest = async (req, res) => {
     try {
         const { userId } = req.body;
 
-        const request = await FriendRequest.find({
-            requestTo: userId,
-            requestStatus: "Pending",
-        })
-            // .populate({
-            //     path: "requestFrom",
-            //     select: "firstName lastName profileUrl profession -password",
-            // })
-            .limit(10)
-            .sort({
-                _id: -1,
-            });
+        const request = await FriendRequest.find({ requestTo: userId, requestStatus: "Pending" }).limit(10).sort({ _id: -1, });
 
+        // const user = await User.findById({_id:reques})        
         res.status(200).json({
             success: true,
             data: request,
         });
+        console.log(request)
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -1,36 +1,28 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
-import AuthRouter from './Routes/AuthRoute.js';
-import UserRouter from './Routes/UserRoute.js';
-import ProductRouter from './Routes/ProductRoute.js';
-
+import mongoose from 'mongoose';
+import AUthRoute from './routes/Auth.js';
+import UserRoute from './routes/User.js';
+import PostRoute from './routes/Post.js';
+import errorMiddleware from './Middlewares/ErrorMiddleware.js';
 dotenv.config();
 
 const app = express();
-app.use(cookieParser());
 app.use(express.json());
-const allowedOrigins = ['http://localhost:5173'];
-const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
-};
+app.use(cors());
+app.use(cookieParser());
 
-app.use(cors(corsOptions));
+app.use(errorMiddleware);
+app.use("/auth", AUthRoute);
+app.use("/users", UserRoute);
+app.use("/posts", PostRoute);
 
-
-// Routers
-app.use("/auth", AuthRouter)
-app.use("/user", UserRouter)
-app.use("/product", ProductRouter)
-
-// MONGO DB CONNECTION
-mongoose.connect(process.env.MONGODB_URL)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection failed", err));
+mongoose.connect("mongodb+srv://socialmedia:socialmedia123@cluster0.odsvacz.mongodb.net/?retryWrites=true&w=majority")
+    .then(() => console.log("MONGO DB is connected"))
+    .catch((err) => console.log("MONGO DB connection failed", err));
 
 app.listen(8800, () => {
-  console.log("API is working on port 8800");
+    console.log("API IS WORKING");
 });

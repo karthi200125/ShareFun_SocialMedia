@@ -128,31 +128,27 @@ export const getUserPost = async (req, res, next) => {
   }
 };
 
+
 export const getComments = async (req, res, next) => {
   try {
     const { postId } = req.params;
 
     const postComments = await Comments.find({ postId })
-      // .populate({
-      //   path: "userId",
-      //   select: "firstName lastName location profileUrl -password",
-      // })
-      // .populate({
-      //   path: "replies.userId",
-      //   select: "firstName lastName location profileUrl -password",
-      // })
-      .sort({ _id: -1 });
+      .populate('userId', 'firstName profession profileUrl')
+      .populate('replies.userId', 'firstName profession profileUrl')
+      .sort({ _id: -1 })
 
     res.status(200).json({
-      sucess: true,
-      message: "successfully",
+      success: true,
+      message: 'Successfully fetched comments',
       data: postComments,
     });
   } catch (error) {
     console.log(error);
-    res.status(404).json({ message: error.message });
+    res.status(500).json({ message: 'Error fetching comments' });
   }
 };
+
 
 export const likePost = async (req, res, next) => {
   try {
