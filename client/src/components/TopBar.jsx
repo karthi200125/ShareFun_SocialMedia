@@ -10,7 +10,7 @@ import { logout } from "../redux/userSlice";
 import CustomButton from "./CustomButton";
 import TextInput from "./TextInput";
 
-const TopBar = ({onSerach}) => {
+const TopBar = ({ onSerach }) => {
   const { theme } = useSelector((state) => state.theme);
   const { user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -29,6 +29,7 @@ const TopBar = ({onSerach}) => {
   const handleSearch = async (data) => {
     onSerach(data)
   };
+  
 
   return (
     <div className='topbar w-full flex items-center justify-between py-3 md:py-6 px-4 bg-primary'>
@@ -60,7 +61,7 @@ const TopBar = ({onSerach}) => {
       {/* ICONS */}
       <div className='flex gap-4 items-center text-ascent-1 text-md md:text-xl'>
         <button onClick={() => handleTheme()}>
-          {theme ? <BsMoon /> : <BsSunFill />}
+          {theme === "dark" ? <BsSunFill /> : <BsMoon />}
         </button>
         <div className='hidden lg:flex'>
           <IoMdNotificationsOutline />

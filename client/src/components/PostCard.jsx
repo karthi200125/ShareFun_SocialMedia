@@ -9,10 +9,11 @@ import TextInput from "./TextInput";
 import Loading from "./Loading";
 import CustomButton from "./CustomButton";
 import axios from "axios";
+import { API } from "../utils/index";
 
 const getPostComments = async (postId, userId) => {
   try {
-    const res = await axios.get(`http://localhost:8800/posts/comments/${postId}`, {
+    const res = await API.get(`/posts/comments/${postId}`, {
       params: { userId },
     });
     return res?.data;
@@ -23,7 +24,7 @@ const getPostComments = async (postId, userId) => {
 
 
 const ReplyCard = ({ reply, user, handleLike }) => {
-  console.log("reply comments",reply)
+
   return (
     <div className='w-full py-3'>
       <div className='flex gap-3 items-center mb-1'>
@@ -52,7 +53,7 @@ const ReplyCard = ({ reply, user, handleLike }) => {
         <div className='mt-2 flex gap-6'>
           <p
             className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer'
-            onClick={handleLike}
+            onClick={() => handleLike("/posts/like/" + post._id)}
           >
             {reply?.likes?.includes(user?.user?._id) ? (
               <BiSolidLike size={20} color='blue' />
@@ -85,12 +86,12 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
 
     try {
       const URL = !replyAt
-        ? "http://localhost:8800/posts/comment/" + id
-        : "http://localhost:8800/posts/reply-comment/" + id;
+        ? "/posts/comment/" + id
+        : "/posts/reply-comment/" + id;
 
-      const newData = { comment: data.comment, from: user?.user?.firstName + " " + user?.user?.lastName, replyAt: replyAt , userId:user?.user?._id };
+      const newData = { comment: data.comment, from: user?.user?.firstName + " " + user?.user?.lastName, replyAt: replyAt, userId: user?.user?._id };
 
-      const res = await axios.post(URL, newData);
+      const res = await API.post(URL, newData);
 
       if (res.status === 400) {
         setErrMsg(res.data.message);
@@ -107,7 +108,7 @@ const CommentForm = ({ user, id, replyAt, getComments }) => {
     }
   };
 
-  
+
 
   return (
     <form
@@ -185,7 +186,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
     }
   }, [showComments, post?._id]);
 
-  
+
 
   return (
     <div className='mb-2 bg-primary p-4 rounded-xl'>

@@ -136,7 +136,7 @@ const Home = () => {
     }
   };
 
-  const handleFriendRequest = async (id) => {
+  const handleFriendRequest = async (id) => {    
     try {
       const res = await sendFriendRequest(user, id)
       await fetchSuggestedFriends();
@@ -170,7 +170,7 @@ const Home = () => {
 
   const [search, setSearch] = useState("");
   const searchPosts = posts?.data?.filter((item) => item?.description?.toLowerCase().includes(search?.search))
-  console.log("friend request", friendRequest?.data)
+
 
   return (
     <>
@@ -192,7 +192,7 @@ const Home = () => {
             >
               <div className='w-full flex items-center gap-2 py-4 border-b border-[#66666645]'>
                 <img
-                  src={user?.profileUrl ?? NoProfile}
+                  src={user?.user?.profileUrl ?? NoProfile}
                   alt='User Image'
                   className='w-14 h-14 rounded-full object-cover'
                 />
@@ -380,7 +380,7 @@ const Home = () => {
                       className='w-full flex gap-4 items-center cursor-pointer'
                     >
                       <img
-                        src={friend?.profileUrl ?? NoProfile}
+                        src={friend?.profileUrl ? friend?.profileUrl : NoProfile}
                         alt={friend?.firstName}
                         className='w-10 h-10 object-cover rounded-full'
                       />
@@ -397,9 +397,8 @@ const Home = () => {
                     <div className='flex gap-1'>
                       <button
                         className='bg-[#0444a430] text-sm text-white p-1 rounded'
-                        onClick={() => handleFriendRequest(friend?._id)}
                       >
-                        <BsPersonFillAdd size={20} className='text-[#0f52b6]' />
+                        <BsPersonFillAdd size={20} className='text-[#0f52b6]' onClick={() => handleFriendRequest(friend?._id)} />
                       </button>
                     </div>
                   </div>

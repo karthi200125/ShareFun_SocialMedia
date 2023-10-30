@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SetPosts } from '../redux/postSlice';
 
-const API_URL = "http://localhost:8800/";
+const API_URL = "https://soaiclmediaapi.onrender.com/";
 
 export const API = axios.create({
   baseURL: API_URL,
