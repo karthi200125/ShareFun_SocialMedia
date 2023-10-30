@@ -10,7 +10,7 @@ import {
     likePost,
     likePostComment,
     replyPostComment,    
- } from '../controllers/PostController.js';
+  } from '../controllers/postController.js';
 import { verifyuser } from '../utils/verifyToken.js';
 
 const router = express.Router();
